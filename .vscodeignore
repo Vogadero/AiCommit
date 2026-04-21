@@ -1,0 +1,15 @@
+.vscode/**
+.vscode-test/**
+src/**
+.history/**
+.gitignore
+**/*.map
+**/*.ts
+!out/**/*.js
+node_modules/**
+tsconfig.json
+webpack.config.js
+esbuild.js
+*.vsix
+需求文档.md
+.trae/**

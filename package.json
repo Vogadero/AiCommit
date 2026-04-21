@@ -1,0 +1,402 @@
+{
+  "name": "aicommit",
+  "displayName": "AI Commit",
+  "description": "通过配置自定义 AI 大模型，自动生成 git commit 提交信息。支持 OpenAI 兼容协议，无缝集成到 VSCode 的 Git 工作流中。",
+  "version": "1.0.0",
+  "publisher": "Vogadero",
+  "author": {
+    "name": "Vogadero",
+    "email": "15732651140@163.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Vogadero/AiCommit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Vogadero/AiCommit/issues"
+  },
+  "homepage": "https://github.com/Vogadero/AiCommit#readme",
+  "engines": {
+    "vscode": "^1.97.0"
+  },
+  "categories": [
+    "Other",
+    "SCM"
+  ],
+  "keywords": [
+    "git",
+    "commit",
+    "ai",
+    "openai",
+    "conventional commits",
+    "gitmoji"
+  ],
+  "icon": "images/icon.png",
+  "activationEvents": [
+    "onCommand:aicommit.generate",
+    "onCommand:aicommit.generateAndCommit",
+    "onCommand:aicommit.regenerate",
+    "onCommand:aicommit.cancelGeneration",
+    "onCommand:aicommit.testConnection",
+    "onCommand:aicommit.selectModel",
+    "onCommand:aicommit.openConfig",
+    "onCommand:aicommit.useHistory",
+    "onCommand:aicommit.clearHistory",
+    "onCommand:aicommit.exportDiagnosticLog",
+    "onCommand:aicommit.amendCommit",
+    "onCommand:aicommit.switchModelGroup"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aicommit.generate",
+        "title": "AI Commit: 生成 Commit 信息",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "aicommit.generateAndCommit",
+        "title": "AI Commit: 生成并提交",
+        "icon": "$(check)"
+      },
+      {
+        "command": "aicommit.regenerate",
+        "title": "AI Commit: 重新生成",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "aicommit.cancelGeneration",
+        "title": "AI Commit: 取消生成",
+        "icon": "$(stop)"
+      },
+      {
+        "command": "aicommit.testConnection",
+        "title": "AI Commit: 测试连接",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "aicommit.selectModel",
+        "title": "AI Commit: 选择 AI 模型",
+        "icon": "$(server)"
+      },
+      {
+        "command": "aicommit.exportUsage",
+        "title": "AI Commit: 导出用量数据"
+      },
+      {
+        "command": "aicommit.openConfig",
+        "title": "AI Commit: 打开配置面板",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "aicommit.useHistory",
+        "title": "AI Commit: 使用历史记录"
+      },
+      {
+        "command": "aicommit.clearHistory",
+        "title": "AI Commit: 清空生成历史"
+      },
+      {
+        "command": "aicommit.exportDiagnosticLog",
+        "title": "AI Commit: 导出诊断日志"
+      },
+      {
+        "command": "aicommit.amendCommit",
+        "title": "AI Commit: 修改上次提交信息",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "aicommit.switchModelGroup",
+        "title": "AI Commit: 切换模型配置组",
+        "icon": "$(server)"
+      }
+    ],
+    "menus": {
+      "scm/title": [
+        {
+          "command": "aicommit.generate",
+          "group": "navigation",
+          "when": "scmProvider == git"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "AI Commit",
+      "properties": {
+        "aicommit.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用或禁用 AI Commit 插件。禁用后所有命令和 SCM 按钮将不可用。",
+          "order": 1
+        },
+        "aicommit.baseUrl": {
+          "type": "string",
+          "default": "https://api.openai.com/v1",
+          "markdownDescription": "API 基础 URL，需兼容 OpenAI Chat Completions 协议（`/v1/chat/completions`）。\n\n当前主流 AI 服务商均支持此协议，只需更换此 URL 即可接入不同服务商：\n- **OpenAI**: `https://api.openai.com/v1`\n- **DeepSeek**: `https://api.deepseek.com/v1`\n- **通义千问**: `https://dashscope.aliyuncs.com/compatible-mode/v1`\n- **Moonshot**: `https://api.moonshot.cn/v1`\n- **智谱 AI**: `https://open.bigmodel.cn/api/paas/v4`\n- **本地 Ollama**: `http://localhost:11434/v1`",
+          "order": 2
+        },
+        "aicommit.apiKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "⚠️ **此配置项已弃用，仅保留环境变量兼容。**\n\nAPI 密钥现已通过加密存储（SecretStorage）安全管理，请通过以下方式配置：\n- 点击状态栏 ⚙ 图标打开 **AI Commit 配置面板** 进行配置\n- 或使用环境变量格式：`${env:API_KEY_NAME}`\n\n配置面板中的密钥使用 VSCode 加密存储，不会明文保存在 settings.json 中。",
+          "order": 3,
+          "deprecationMessage": "请通过 AI Commit 配置面板管理 API Key，密钥将加密存储"
+        },
+        "aicommit.model": {
+          "type": "string",
+          "default": "gpt-4",
+          "markdownDescription": "AI 模型名称。\n\n- 可直接输入模型 ID（如 `gpt-4`、`gpt-3.5-turbo`、`deepseek-chat` 等）\n- 也可通过命令面板执行 `AI Commit: 选择 AI 模型` 从 API 获取可用模型列表\n\n**常用模型参考：**\n| 服务商 | Base URL | 模型示例 |\n|--------|----------|----------|\n| OpenAI | `https://api.openai.com/v1` | `gpt-4`, `gpt-4o`, `gpt-3.5-turbo` |\n| DeepSeek | `https://api.deepseek.com/v1` | `deepseek-chat`, `deepseek-coder` |\n| 通义千问 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-turbo`, `qwen-plus`, `qwen-max` |\n| Moonshot | `https://api.moonshot.cn/v1` | `moonshot-v1-8k`, `moonshot-v1-32k` |\n| 智谱 AI | `https://open.bigmodel.cn/api/paas/v4` | `glm-4`, `glm-4-flash` |",
+          "order": 4
+        },
+        "aicommit.modelGroups": {
+          "type": "array",
+          "default": [],
+          "markdownDescription": "AI 模型配置组列表。每组包含独立的连接参数，可快速切换。\n\n每组包含：\n- `name`: 组名称（如 \"GPT-4o\", \"DeepSeek\"）\n- `model`: 模型名称\n- `apiKey`: API 密钥（支持 `${env:XXX}` 格式，实际密钥存于 SecretStorage）\n- `baseUrl`: API 基础 URL\n- `temperature`: 温度参数\n- `maxTokens`: 最大令牌数\n\n💡 使用 `AI Commit: 切换模型配置组` 命令快速切换，状态栏显示当前组名。",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "description": "配置组名称" },
+              "model": { "type": "string", "description": "模型名称" },
+              "apiKey": { "type": "string", "description": "API 密钥（支持环境变量）" },
+              "baseUrl": { "type": "string", "description": "API 基础 URL" },
+              "temperature": { "type": "number", "description": "温度" },
+              "maxTokens": { "type": "number", "description": "最大令牌数" }
+            },
+            "required": ["name", "model", "baseUrl"]
+          },
+          "order": 27
+        },
+        "aicommit.activeModelGroup": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "当前活跃的模型配置组名称。\n\n- 设为空时使用全局配置（`model` + `apiKey` + `baseUrl`）\n- 设为配置组名称时，使用该组的参数覆盖全局配置\n- 若指定的组不存在，自动回退到第一个可用组\n\n💡 点击状态栏配置组名称可快速切换。",
+          "order": 28
+        },
+        "aicommit.temperature": {
+          "type": "number",
+          "default": 0.7,
+          "minimum": 0,
+          "maximum": 2,
+          "markdownDescription": "生成温度参数，控制 AI 输出的随机性。\n\n- **0**: 输出最确定、最保守，适合需要稳定结果的场景\n- **0.7**（默认）: 平衡创造性和准确性，适合大多数场景\n- **1.0 - 2.0**: 更有创造性但可能不够准确，适合探索性场景\n\n💡 建议生成 commit 信息时使用较低温度（0.3-0.7）以获得更规范的结果。",
+          "order": 5
+        },
+        "aicommit.maxTokens": {
+          "type": "number",
+          "default": 500,
+          "markdownDescription": "AI 生成的最大 Token 数量。\n\n- **200-300**: 适合简短的 commit message\n- **500**（默认）: 适合包含正文的 commit message\n- **800+**: 适合需要详细描述的复杂变更\n\n💡 Token 数量影响 API 调用费用，建议根据实际需求调整。",
+          "order": 6
+        },
+        "aicommit.format": {
+          "type": "string",
+          "enum": [
+            "conventional",
+            "gitmoji",
+            "bullet",
+            "custom"
+          ],
+          "enumDescriptions": [
+            "Conventional Commits 格式 — type(scope): description，标题与正文间空行分隔",
+            "Gitmoji + Conventional 格式 — :emoji: type(scope): description，在 Conventional 基础上增加语义化 Emoji 前缀",
+            "Bullet 要点式格式 — type(scope): description:，正文每行以 - 开头，; 分隔，末行以 。结尾，无空行",
+            "自定义格式 — 使用 customFormatTemplate 配置项定义自己的 commit 格式模板，支持 <type>/<scope>/<description>/<body> 等占位符"
+          ],
+          "default": "bullet",
+          "markdownDescription": "Commit 信息的格式规范。\n\n- **conventional**: Conventional Commits 标准格式，标题与正文间空行分隔\n- **gitmoji**: Gitmoji + Conventional 格式，增加 Emoji 前缀\n- **bullet**: Bullet 要点式格式（AI Commit 内置风格），标题末尾加冒号，正文每行一个变更点\n- **custom**: 自定义格式，需配合 `customFormatTemplate` 使用",
+          "order": 7
+        },
+        "aicommit.customFormatTemplate": {
+          "type": "string",
+          "default": "<type>(<scope>): <description>",
+          "markdownDescription": "自定义 commit 格式模板，仅当 `format` 为 `custom` 时生效。\n\n可用占位符：\n- `<type>`: 变更类型（feat/fix/docs 等）\n- `<scope>`: 变更范围（模块名）\n- `<description>`: 简短描述\n- `<body>`: 详细说明\n\n示例：\n- `[<type>] <description>` → `[feat] 添加用户登录功能`\n- `<type>(<scope>): <description>\\n\\n<body>` → 带正文的格式",
+          "order": 8
+        },
+        "aicommit.maxLength": {
+          "type": "number",
+          "default": 72,
+          "markdownDescription": "Commit 信息标题行的最大字符数。\n\n- **50**: Git 官方建议的严格限制\n- **72**（默认）: GitHub 显示限制，广泛使用的标准\n- **100**: 较宽松的限制\n\n💡 超过此长度的标题行会被 AI 自动截断或重新生成。",
+          "order": 9
+        },
+        "aicommit.candidateCount": {
+          "type": "number",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 5,
+          "markdownDescription": "一次生成的候选 commit message 数量。\n\n- **1**: 只生成一条，速度最快\n- **2**（默认）: 生成两条候选，可快速切换选择\n- **3-5**: 更多候选方案，但生成时间略长\n\n💡 多候选方案几乎不增加额外 API 成本，因为是在同一次请求中生成。",
+          "order": 10
+        },
+        "aicommit.autoDetectScope": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "自动检测变更范围（scope）。\n\n- **开启**（默认）: AI 会根据变更文件路径自动推断 scope，如 `auth`、`api`、`utils` 等\n- **关闭**: 不添加 scope，commit 格式为 `type: description`",
+          "order": 11
+        },
+        "aicommit.diffTruncateThreshold": {
+          "type": "number",
+          "default": 3000,
+          "markdownDescription": "Diff 截断阈值（行数）。当暂存区 diff 超过此行数时，将进行智能截断。\n\n- **1000**: 适合小项目或低 Token 预算\n- **3000**（默认）: 适合中等项目\n- **5000+**: 适合大型项目，但可能增加 API 成本\n\n💡 截断策略：优先保留文件级摘要（文件名 + 变更类型 + 行数统计），截断具体代码内容。",
+          "order": 12
+        },
+        "aicommit.saveHistory": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "保存 AI 生成历史记录。\n\n- **开启**: 每次生成的 commit message 会保存到本地历史，方便回溯\n- **关闭**（默认）: 不保存历史，保护隐私",
+          "order": 13
+        },
+        "aicommit.logLevel": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warn",
+            "info",
+            "debug"
+          ],
+          "enumDescriptions": [
+            "仅记录错误信息 — 适合正常使用",
+            "记录错误和警告 — 适合排查问题",
+            "记录一般信息、错误和警告（默认）— 适合日常使用",
+            "记录所有调试信息 — 适合开发调试，可能包含敏感信息"
+          ],
+          "default": "info",
+          "markdownDescription": "日志级别，控制 AI Commit Output Channel 中记录的信息详细程度。\n\n- **error**: 仅错误\n- **warn**: 错误 + 警告\n- **info**（默认）: 一般信息 + 错误 + 警告\n- **debug**: 全部调试信息\n\n💡 可通过命令面板执行 `Output: Show Output Channels` → 选择 `AI Commit` 查看日志。",
+          "order": 14
+        },
+        "aicommit.promptTemplate": {
+          "type": "string",
+          "enum": [
+            "bullet",
+            "conventional-expert",
+            "concise",
+            "detailed",
+            "semantic",
+            "team",
+            "custom"
+          ],
+          "enumDescriptions": [
+            "Bullet 要点式（默认）— AI Commit 内置风格，标题末尾冒号，正文每行一个变更点",
+            "Conventional Expert — 标准 Conventional Commits 格式，标题与正文间空行分隔",
+            "Concise — 简洁风格，只生成标题行和简短正文",
+            "Detailed — 详细风格，包含动机、实现方式、风险评估",
+            "Semantic — 语义化风格，使用结构化 XML 格式分析变更",
+            "Team — 团队协作风格，支持破坏性变更标记和 Issue 关联",
+            "自定义 — 使用 customPromptTemplate 配置项定义自己的 Prompt 模板"
+          ],
+          "default": "bullet",
+          "markdownDescription": "Prompt 模板，控制 AI 生成 commit 信息的风格和详细程度。",
+          "order": 15
+        },
+        "aicommit.customPromptTemplate": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "自定义 Prompt 模板内容。仅在 promptTemplate 设为 'custom' 时生效。\n\n支持占位符: `{format}`, `{candidateCount}`, `{maxLength}`, `{temperature}`, `{maxTokens}`, `{autoDetectScope}`。占位符会在渲染时自动替换为实际配置值。",
+          "order": 16
+        },
+        "aicommit.customModelPricing": {
+          "type": "object",
+          "default": {},
+          "markdownDescription": "自定义模型单价（每 1K Tokens 的美元价格），优先级高于内置单价表。\n\n格式: `{\"模型名\": {\"input\": 输入单价, \"output\": 输出单价, \"cacheRead\": 缓存读取单价}}`\n\n示例: `{\"my-model\": {\"input\": 0.001, \"output\": 0.002, \"cacheRead\": 0.0005}}`\n\n`cacheRead` 为可选字段，表示缓存命中时的 Token 单价（通常为输入单价的 50%）。",
+          "order": 17
+        },
+        "aicommit.enableProjectContext": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "启用项目上下文增强。\n\n- **开启**: 生成 commit 信息时，自动将项目名称和最近5条提交记录作为上下文传给 AI，使生成的 commit 信息风格更一致\n- **关闭**（默认）: 不附加项目上下文，仅基于 diff 内容生成\n\n💡 开启后会略微增加 Token 消耗，但能显著提升生成质量，尤其适合已有提交历史的项目。",
+          "order": 18
+        },
+        "aicommit.dailyBudget": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "markdownDescription": "日费用预算上限（美元），设为 0 表示不限制。\n\n- 当累计费用达到预算的 **80%** 时，弹出 Warning 通知\n- 当累计费用达到预算的 **100%** 时，弹出 Error 通知并询问是否继续使用\n- 预算告警为软限制，不强制阻断功能，仅提醒用户\n\n💡 适合控制每日 AI 调用成本，避免意外超支。",
+          "order": 19
+        },
+        "aicommit.monthlyBudget": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "markdownDescription": "月费用预算上限（美元），设为 0 表示不限制。\n\n- 当累计费用达到预算的 **80%** 时，弹出 Warning 通知\n- 当累计费用达到预算的 **100%** 时，弹出 Error 通知并询问是否继续使用\n- 预算告警为软限制，不强制阻断功能，仅提醒用户\n\n💡 适合控制每月 AI 调用成本，配合日预算使用效果更佳。",
+          "order": 20
+        },
+        "aicommit.currency": {
+          "type": "string",
+          "enum": [
+            "USD",
+            "CNY"
+          ],
+          "enumDescriptions": [
+            "美元（默认）",
+            "人民币"
+          ],
+          "default": "USD",
+          "markdownDescription": "费用显示货币。\n\n- **USD**（默认）: 以美元显示费用\n- **CNY**: 以人民币显示费用，使用 `exchangeRate` 配置的汇率进行换算",
+          "order": 21
+        },
+        "aicommit.exchangeRate": {
+          "type": "number",
+          "default": 7.2,
+          "minimum": 0.01,
+          "markdownDescription": "美元兑人民币汇率，仅在 `currency` 设为 `CNY` 时生效。\n\n- 默认值: **7.2**（1 USD = 7.2 CNY）\n- 可根据实际汇率自行调整\n\n💡 费用计算始终以美元为基础，显示时按此汇率换算为人民币。",
+          "order": 22
+        },
+        "aicommit.diffSource": {
+          "type": "string",
+          "enum": [
+            "staged",
+            "unstaged"
+          ],
+          "enumDescriptions": [
+            "暂存区（默认）— 分析 git diff --cached 的变更",
+            "工作区未暂存变更 — 分析 git diff 的变更，适用于暂存前预览 commit message"
+          ],
+          "default": "staged",
+          "markdownDescription": "Diff 来源选择。\n\n- **staged**（默认）: 分析暂存区变更（`git diff --cached`），生成后可直接提交\n- **unstaged**: 分析工作区未暂存变更（`git diff`），适用于希望在暂存前预览 commit message 的场景\n\n💡 使用 `unstaged` 时，生成的 commit message 仅供参考，仍需暂存后才能提交。",
+          "order": 23
+        },
+        "aicommit.commitLanguage": {
+          "type": "string",
+          "enum": [
+            "English",
+            "Chinese",
+            "Follow VSCode"
+          ],
+          "enumDescriptions": [
+            "英文（默认）",
+            "中文",
+            "跟随 VSCode 显示语言"
+          ],
+          "default": "English",
+          "markdownDescription": "Commit 信息的撰写语言。\n\n- **English**（默认）: 使用英文撰写 commit 信息\n- **Chinese**: 使用中文撰写 commit 信息\n- **Follow VSCode**: 跟随 VSCode 的显示语言设置\n\n💡 此设置独立于插件 UI 语言，仅控制 AI 生成的 commit message 语言。",
+          "order": 24
+        },
+        "aicommit.enableStreaming": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "启用流式响应（Streaming）。\n\n- **开启**（默认）: AI 生成时逐步显示结果，首字显示时间 < 1 秒，请求发送 `stream: true` 参数并解析 SSE 事件流\n- **关闭**: 等待 AI 完整响应后一次性显示\n\n💡 流式响应显著改善等待体验，建议保持开启。若遇到兼容性问题（如部分私有部署不支持 SSE）可关闭。",
+          "order": 25
+        },
+        "aicommit.proxy": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "HTTP/SOCKS5 代理地址，用于访问 AI API。\n\n格式示例：\n- HTTP 代理: `http://proxy.example.com:8080`\n- HTTPS 代理: `https://proxy.example.com:8080`\n- SOCKS5 代理: `socks5://proxy.example.com:1080`\n- 带认证: `http://user:password@proxy.example.com:8080` 或 `socks5://user:password@proxy.example.com:1080`\n\n💡 留空则不使用代理。也可通过环境变量 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` 配置。",
+          "order": 26
+        }
+      }
+    }
+  },
+  "scripts": {
+    "esbuild": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "watch": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --watch",
+    "compile": "tsc -p .",
+    "build": "npm run esbuild",
+    "package": "npx vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "@types/vscode": "^1.97.0",
+    "@vscode/vsce": "^3.9.1",
+    "esbuild": "^0.25.1",
+    "jsdom": "^29.0.2",
+    "sharp": "^0.34.5",
+    "typescript": "^5.8.2"
+  }
+}
