@@ -48,7 +48,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand('aicommit.openConfig', () => {
       statusBar.showConfigBar();
-      ConfigPanel.createOrShow(context.extensionUri, logger, configManager, aiService, tokenTracker, historyManager);
+      ConfigPanel.createOrShow(context.extensionUri, logger, configManager, aiService, tokenTracker, historyManager, statusBar);
     }),
   );
 

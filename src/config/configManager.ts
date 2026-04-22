@@ -32,6 +32,9 @@ export interface AiCommitConfig {
   commitLanguage: string;
   enableStreaming: boolean;
   proxy: string;
+  showStatusBarConfig: boolean;
+  showStatusBarGroup: boolean;
+  showStatusBarGenerate: boolean;
   activeModelGroup: string;
   modelGroups: ModelGroup[];
 }
@@ -99,6 +102,9 @@ export class ConfigManager {
       commitLanguage: cfg.get<string>('commitLanguage', 'English'),
       enableStreaming: cfg.get<boolean>('enableStreaming', true),
       proxy: cfg.get<string>('proxy', ''),
+      showStatusBarConfig: cfg.get<boolean>('showStatusBarConfig', true),
+      showStatusBarGroup: cfg.get<boolean>('showStatusBarGroup', true),
+      showStatusBarGenerate: cfg.get<boolean>('showStatusBarGenerate', true),
       activeModelGroup: activeGroupName,
       modelGroups,
     };
@@ -156,6 +162,9 @@ export class ConfigManager {
       commitLanguage: cfg.get<string>('commitLanguage', 'English'),
       enableStreaming: cfg.get<boolean>('enableStreaming', true),
       proxy: cfg.get<string>('proxy', ''),
+      showStatusBarConfig: cfg.get<boolean>('showStatusBarConfig', true),
+      showStatusBarGroup: cfg.get<boolean>('showStatusBarGroup', true),
+      showStatusBarGenerate: cfg.get<boolean>('showStatusBarGenerate', true),
       activeModelGroup: activeGroupName,
       modelGroups,
     };

@@ -22,6 +22,7 @@ export class ConfigPanel {
     aiService: AiService,
     tokenTracker: TokenTracker,
     historyManager: HistoryManager,
+    statusBar?: any,
   ): void {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
@@ -40,6 +41,7 @@ export class ConfigPanel {
       aiService,
       tokenTracker,
       historyManager,
+      statusBar,
       column,
     );
   }
@@ -51,6 +53,7 @@ export class ConfigPanel {
     private aiService: AiService,
     private tokenTracker: TokenTracker,
     private historyManager: HistoryManager,
+    private statusBar: any,
     column: vscode.ViewColumn | undefined,
   ) {
     this.panel = vscode.window.createWebviewPanel(
@@ -509,6 +512,9 @@ export class ConfigPanel {
         commitLanguage: 'commitLanguage',
         enableStreaming: 'enableStreaming',
         proxy: 'proxy',
+        showStatusBarConfig: 'showStatusBarConfig',
+        showStatusBarGroup: 'showStatusBarGroup',
+        showStatusBarGenerate: 'showStatusBarGenerate',
         modelGroups: 'modelGroups',
         activeModelGroup: 'activeModelGroup',
       };
@@ -529,6 +535,13 @@ export class ConfigPanel {
       this.postMessage('saveConfigResult', { success: true });
       vscode.window.showInformationMessage('AI Commit: 配置已保存');
       this.logger.info('配置已通过配置面板保存');
+      if (this.statusBar) {
+        this.statusBar.applyVisibility(
+          data.showStatusBarConfig,
+          data.showStatusBarGroup,
+          data.showStatusBarGenerate,
+        );
+      }
     } catch (error) {
       this.postMessage('saveConfigResult', { success: false, error: (error as Error).message });
       vscode.window.showErrorMessage(`AI Commit: 保存失败 - ${(error as Error).message}`);
@@ -1461,11 +1474,98 @@ export class ConfigPanel {
       }
     }
 
+    .usage-flow-panel {
+      margin-top: 8px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 12px;
+      height: 50px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .usage-flow-track {
+      height: 6px;
+      border-radius: 3px;
+      background: var(--border);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .usage-flow-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      border-radius: 3px;
+      opacity: 0;
+      transition: opacity 0.4s, width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .usage-flow-fill.active {
+      opacity: 1;
+    }
+
+    .usage-flow-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+      animation: flowShimmer 2s ease-in-out infinite;
+    }
+
+    .today-flow {
+      background: linear-gradient(90deg, #0078d4, #00bcf2);
+    }
+
+    .week-flow {
+      background: linear-gradient(90deg, #6c5ce7, #a855f7);
+    }
+
+    .month-flow {
+      background: linear-gradient(90deg, #f59e0b, #ef4444);
+    }
+
+    .usage-flow-info {
+      font-size: 10px;
+      color: var(--fg);
+      opacity: 0.6;
+      margin-top: 4px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      transition: opacity 0.3s;
+    }
+
+    .usage-stat-item.today.flow-active {
+      box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.3);
+    }
+
+    .usage-stat-item.week.flow-active {
+      box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.3);
+    }
+
+    .usage-stat-item.month.flow-active {
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+    }
+
+    @keyframes flowShimmer {
+      0% { left: -100%; }
+      100% { left: 200%; }
+    }
+
     .usage-chart-container {
       background: var(--input-bg);
       border: 1px solid var(--border);
       border-radius: 6px;
       padding: 12px 14px 8px;
+      margin-top: 10px;
     }
 
     .usage-chart-label {
@@ -1493,7 +1593,7 @@ export class ConfigPanel {
 
     .usage-chart-grid-line {
       border-top: 1px dashed var(--border);
-      opacity: 0.5;
+      opacity: 0.35;
     }
 
     .usage-chart {
@@ -1518,17 +1618,14 @@ export class ConfigPanel {
       width: 100%;
       min-width: 0;
       border-radius: 3px 3px 0 0;
-      background: linear-gradient(180deg, var(--accent, #0078d4), rgba(0, 120, 212, 0.4));
-      opacity: 0.75;
-      transition: opacity 0.15s, transform 0.15s;
+      background: linear-gradient(180deg, rgba(0, 120, 212, 0.9), rgba(0, 120, 212, 0.35));
+      transition: opacity 0.15s, filter 0.15s;
       position: relative;
       cursor: default;
     }
 
     .usage-chart-bar:hover {
-      opacity: 1;
-      transform: scaleY(1.02);
-      transform-origin: bottom;
+      filter: brightness(1.2);
     }
 
     .usage-chart-bar[title]:hover::after {
@@ -1544,19 +1641,8 @@ export class ConfigPanel {
       font-size: 10px;
       white-space: nowrap;
       z-index: 10;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
       line-height: 1.4;
-    }
-
-    .usage-chart-bar[title]:hover::before {
-      content: '';
-      position: absolute;
-      bottom: calc(100% + 2px);
-      left: 50%;
-      transform: translateX(-50%);
-      border: 4px solid transparent;
-      border-top-color: var(--fg);
-      z-index: 10;
     }
 
     .usage-chart-date {
@@ -1612,43 +1698,101 @@ export class ConfigPanel {
       background: #f59e0b;
     }
 
-    .usage-summary-bar {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0;
-      margin-top: 10px;
-      padding: 8px 12px;
+    .usage-gauge-panel {
       background: var(--input-bg);
       border: 1px solid var(--border);
       border-radius: 6px;
+      padding: 8px 12px 6px;
+      margin-top: 8px;
     }
 
-    .usage-summary-item {
-      flex: 1;
-      text-align: center;
-    }
-
-    .usage-summary-label {
+    .usage-gauge {
+      width: 100%;
+      height: 100px;
       display: block;
-      font-size: 10px;
-      color: var(--fg);
-      opacity: 0.45;
-      margin-bottom: 2px;
     }
 
-    .usage-summary-value {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--fg);
+    .gauge-bg {
+      fill: none;
+      stroke: var(--border);
+      stroke-width: 8;
+      stroke-linecap: round;
+    }
+
+    .gauge-bg-inner {
+      stroke-width: 7;
+    }
+
+    .gauge-bg-core {
+      stroke-width: 6;
+    }
+
+    .gauge-fill {
+      fill: none;
+      stroke-width: 8;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .gauge-fill-inner {
+      stroke-width: 7;
+    }
+
+    .gauge-fill-core {
+      stroke-width: 6;
+    }
+
+    .gauge-fill-blue {
+      stroke: #0078d4;
+    }
+
+    .gauge-fill-purple {
+      stroke: #6c5ce7;
+    }
+
+    .gauge-fill-orange {
+      stroke: #f59e0b;
+    }
+
+    .gauge-center-value {
+      fill: var(--fg);
+      font-size: 14px;
+      font-weight: 700;
+      text-anchor: middle;
       font-variant-numeric: tabular-nums;
     }
 
-    .usage-summary-divider {
-      width: 1px;
-      height: 24px;
-      background: var(--border);
-      flex-shrink: 0;
+    .gauge-center-label {
+      fill: var(--fg);
+      font-size: 9px;
+      text-anchor: middle;
+      opacity: 0.5;
+    }
+
+    .usage-gauge-legend {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 4px;
+    }
+
+    .gauge-legend-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-top: 4px;
+    }
+
+    .gauge-legend-dot.blue { background: #0078d4; }
+    .gauge-legend-dot.purple { background: #6c5ce7; }
+    .gauge-legend-dot.orange { background: #f59e0b; }
+
+    .gauge-legend-text {
+      font-size: 10px;
+      color: var(--fg);
+      opacity: 0.55;
     }
 
     .budget-row {
@@ -1845,6 +1989,36 @@ export class ConfigPanel {
     .history-clear-btn:hover {
       border-color: var(--error-fg) !important;
       background: rgba(217, 83, 79, 0.08) !important;
+    }
+
+    .statusbar-toggles {
+      display: flex;
+      gap: 6px;
+    }
+
+    .toggle-chip {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--fg);
+      opacity: 0.7;
+      transition: opacity 0.15s;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .toggle-chip:hover {
+      opacity: 1;
+    }
+
+    .toggle-chip input[type="checkbox"] {
+      margin: 0;
+      accent-color: var(--accent, #0078d4);
+      width: 14px;
+      height: 14px;
     }
   </style>
 </head>
@@ -2091,20 +2265,45 @@ export class ConfigPanel {
             </div>
           </div>
           <div class="usage-stats-grid">
-            <div class="usage-stat-item today">
+            <div class="usage-stat-item today" data-stat="today">
               <div class="usage-stat-label">今日</div>
               <div class="usage-stat-value" id="todayTokens">-</div>
               <div class="usage-stat-cost" id="todayCost">-</div>
             </div>
-            <div class="usage-stat-item week">
+            <div class="usage-stat-item week" data-stat="week">
               <div class="usage-stat-label">本周</div>
               <div class="usage-stat-value" id="weekTokens">-</div>
               <div class="usage-stat-cost" id="weekCost">-</div>
             </div>
-            <div class="usage-stat-item month">
+            <div class="usage-stat-item month" data-stat="month">
               <div class="usage-stat-label">本月</div>
               <div class="usage-stat-value" id="monthTokens">-</div>
               <div class="usage-stat-cost" id="monthCost">-</div>
+            </div>
+          </div>
+          <div class="usage-flow-panel" id="usageFlowPanel">
+            <div class="usage-flow-track">
+              <div class="usage-flow-fill today-flow" id="todayFlow"></div>
+              <div class="usage-flow-fill week-flow" id="weekFlow"></div>
+              <div class="usage-flow-fill month-flow" id="monthFlow"></div>
+            </div>
+            <div class="usage-flow-info" id="usageFlowInfo">今日: -</div>
+          </div>
+          <div class="usage-gauge-panel">
+            <svg class="usage-gauge" viewBox="0 0 120 72">
+              <path class="gauge-bg" d="M 12 62 A 48 48 0 0 1 108 62" />
+              <path class="gauge-fill gauge-fill-orange" d="M 12 62 A 48 48 0 0 1 108 62" id="gaugeDailyCostFill" />
+              <path class="gauge-bg gauge-bg-inner" d="M 22 62 A 38 38 0 0 1 98 62" />
+              <path class="gauge-fill gauge-fill-purple gauge-fill-inner" d="M 22 62 A 38 38 0 0 1 98 62" id="gaugeTotalCallsFill" />
+              <path class="gauge-bg gauge-bg-core" d="M 32 62 A 28 28 0 0 1 88 62" />
+              <path class="gauge-fill gauge-fill-blue gauge-fill-core" d="M 32 62 A 28 28 0 0 1 88 62" id="gaugeDailyTokensFill" />
+              <text class="gauge-center-value" x="60" y="50" id="gaugeCenterVal">-</text>
+              <text class="gauge-center-label" x="60" y="62" id="gaugeCenterLabel">日均用量</text>
+            </svg>
+            <div class="usage-gauge-legend">
+              <span class="gauge-legend-dot blue"></span><span class="gauge-legend-text" id="gaugeLegendTokens">日均用量</span>
+              <span class="gauge-legend-dot purple"></span><span class="gauge-legend-text" id="gaugeLegendCalls">总调用</span>
+              <span class="gauge-legend-dot orange"></span><span class="gauge-legend-text" id="gaugeLegendCost">日均费用</span>
             </div>
           </div>
           <div class="usage-chart-container" id="usageChartContainer">
@@ -2122,22 +2321,6 @@ export class ConfigPanel {
             <div class="usage-chart-legend">
               <div class="usage-chart-legend-item"><span class="usage-chart-legend-dot tokens"></span> Token 用量</div>
               <div class="usage-chart-legend-item"><span class="usage-chart-legend-dot cost"></span> 费用趋势</div>
-            </div>
-          </div>
-          <div class="usage-summary-bar" id="usageSummaryBar">
-            <div class="usage-summary-item">
-              <span class="usage-summary-label">日均用量</span>
-              <span class="usage-summary-value" id="avgDailyTokens">-</span>
-            </div>
-            <div class="usage-summary-divider"></div>
-            <div class="usage-summary-item">
-              <span class="usage-summary-label">总调用次数</span>
-              <span class="usage-summary-value" id="totalCallCount">-</span>
-            </div>
-            <div class="usage-summary-divider"></div>
-            <div class="usage-summary-item">
-              <span class="usage-summary-label">日均费用</span>
-              <span class="usage-summary-value" id="avgDailyCost">-</span>
             </div>
           </div>
         </div>
@@ -2239,6 +2422,15 @@ export class ConfigPanel {
         </div>
 
         <div class="form-group">
+          <label>状态栏显示 <span class="help-icon" title="控制 VSCode 底部状态栏中 AI Commit 相关图标的显示&#10;&#10;• 配置面板入口: 齿轮图标，点击打开配置面板（默认开启）&#10;• 配置组名称: 显示当前模型配置组名，点击切换（默认开启）&#10;• 生成入口: sparkle 图标，点击生成 commit 信息（默认开启）&#10;&#10;关闭后仍可通过命令面板访问对应功能">?</span></label>
+          <div class="statusbar-toggles">
+            <label class="toggle-chip"><input type="checkbox" id="showStatusBarConfig" checked /><span>配置面板入口</span></label>
+            <label class="toggle-chip"><input type="checkbox" id="showStatusBarGroup" checked /><span>配置组名称</span></label>
+            <label class="toggle-chip"><input type="checkbox" id="showStatusBarGenerate" checked /><span>生成入口</span></label>
+          </div>
+        </div>
+
+        <div class="form-group">
           <label>代理设置 <span class="help-icon" title="配置代理地址，用于访问 AI API&#10;默认值: 空（不使用代理）&#10;&#10;格式示例:&#10;• HTTP 代理: http://proxy.example.com:8080&#10;• HTTPS 代理: https://proxy.example.com:8080&#10;• SOCKS5 代理: socks5://proxy.example.com:1080&#10;• 带认证: http://user:pass@proxy:8080 或 socks5://user:pass@proxy:1080&#10;&#10;留空则不使用代理&#10;也可通过环境变量 HTTP_PROXY / HTTPS_PROXY / ALL_PROXY 配置">?</span></label>
           <input type="text" id="proxy" value="" placeholder="http://proxy:8080 或 socks5://proxy:1080（留空不使用代理）" />
         </div>
@@ -2336,6 +2528,9 @@ export class ConfigPanel {
       commitLanguage: $('commitLanguage'),
       enableStreaming: $('enableStreaming'),
       proxy: $('proxy'),
+      showStatusBarConfig: $('showStatusBarConfig'),
+      showStatusBarGroup: $('showStatusBarGroup'),
+      showStatusBarGenerate: $('showStatusBarGenerate'),
       addGroupBtn: $('addGroupBtn'),
       modelGroupsList: $('modelGroupsList'),
       noGroupsHint: $('noGroupsHint'),
@@ -2598,6 +2793,9 @@ export class ConfigPanel {
     els.commitLanguage.addEventListener('change', markDirty);
     els.enableStreaming.addEventListener('change', markDirty);
     els.proxy.addEventListener('input', markDirty);
+    els.showStatusBarConfig.addEventListener('change', markDirty);
+    els.showStatusBarGroup.addEventListener('change', markDirty);
+    els.showStatusBarGenerate.addEventListener('change', markDirty);
     els.addGroupBtn.addEventListener('click', () => handleAddGroup());
     els.viewHistoryBtn.addEventListener('click', () => {
       vscode.postMessage({ type: 'viewHistory' });
@@ -2789,6 +2987,58 @@ export class ConfigPanel {
       });
     }
 
+    let flowCycleTimer = null;
+    let flowCycleIndex = 0;
+    let flowPaused = false;
+
+    function setFlowActive(key) {
+      var fills = document.querySelectorAll('.usage-flow-fill');
+      fills.forEach(function(f) { f.classList.remove('active'); });
+      var items = document.querySelectorAll('.usage-stat-item');
+      items.forEach(function(i) { i.classList.remove('flow-active'); });
+
+      var flowEl = document.getElementById(key + 'Flow');
+      var statEl = document.querySelector('.usage-stat-item.' + key);
+      var infoEl = document.getElementById('usageFlowInfo');
+
+      if (flowEl) flowEl.classList.add('active');
+      if (statEl) statEl.classList.add('flow-active');
+
+      if (infoEl && currentUsageStats) {
+        var data = currentUsageStats[key];
+        if (data) {
+          var labels = { today: '\u4ECA\u65E5', week: '\u672C\u5468', month: '\u672C\u6708' };
+          infoEl.textContent = labels[key] + ': ' + formatTokens(data.totalTokens) + ' tokens \u00B7 ' + formatCost(data.totalCost) + ' \u00B7 ' + data.count + '\u6B21';
+        }
+      }
+
+      var maxTokens = 1;
+      if (currentUsageStats) {
+        var vals = [];
+        if (currentUsageStats.today) vals.push(currentUsageStats.today.totalTokens);
+        if (currentUsageStats.week) vals.push(currentUsageStats.week.totalTokens);
+        if (currentUsageStats.month) vals.push(currentUsageStats.month.totalTokens);
+        maxTokens = Math.max.apply(null, vals) || 1;
+      }
+
+      if (data) {
+        var pct = Math.min(data.totalTokens / maxTokens * 100, 100);
+        if (flowEl) flowEl.style.width = Math.max(pct, 3) + '%';
+      }
+    }
+
+    function startFlowCycle() {
+      if (flowCycleTimer) clearInterval(flowCycleTimer);
+      var keys = ['today', 'week', 'month'];
+      flowCycleIndex = 0;
+      setFlowActive(keys[0]);
+      flowCycleTimer = setInterval(function() {
+        if (flowPaused) return;
+        flowCycleIndex = (flowCycleIndex + 1) % keys.length;
+        setFlowActive(keys[flowCycleIndex]);
+      }, 3000);
+    }
+
     function renderUsageStats(stats) {
       currentUsageStats = stats;
       if (!stats) return;
@@ -2849,14 +3099,62 @@ export class ConfigPanel {
         const totalCost = stats.dailyChart.reduce((s, d) => s + d.cost, 0);
         const totalCount = stats.dailyChart.reduce((s, d) => s + (d.count || 0), 0);
         const days = stats.dailyChart.length;
-        const avgDailyEl = document.getElementById('avgDailyTokens');
-        const totalCallEl = document.getElementById('totalCallCount');
-        const avgCostEl = document.getElementById('avgDailyCost');
-        if (avgDailyEl) avgDailyEl.textContent = formatTokens(Math.round(totalTokens / days));
-        if (totalCallEl) totalCallEl.textContent = totalCount + ' \u6B21';
-        if (avgCostEl) avgCostEl.textContent = formatCost(totalCost / days);
+        var maxDailyTokens = Math.max(...stats.dailyChart.map(d => d.tokens), 1);
+        var maxDailyCost = Math.max(...stats.dailyChart.map(d => d.cost), 0.001);
+        var avgTokens = Math.round(totalTokens / days);
+        var avgCost = totalCost / days;
+        var pctTokens = Math.min(avgTokens / maxDailyTokens, 1);
+        var pctCalls = Math.min(totalCount / (days * 10), 1);
+        var pctCost = Math.min(avgCost / maxDailyCost, 1);
+        var outerArc = Math.PI * 48;
+        var innerArc = Math.PI * 38;
+        var coreArc = Math.PI * 28;
+        var g1 = document.getElementById('gaugeDailyTokensFill');
+        var g2 = document.getElementById('gaugeTotalCallsFill');
+        var g3 = document.getElementById('gaugeDailyCostFill');
+        if (g1) { g1.style.strokeDasharray = coreArc; g1.style.strokeDashoffset = coreArc * (1 - pctTokens); }
+        if (g2) { g2.style.strokeDasharray = innerArc; g2.style.strokeDashoffset = innerArc * (1 - pctCalls); }
+        if (g3) { g3.style.strokeDasharray = outerArc; g3.style.strokeDashoffset = outerArc * (1 - pctCost); }
+        var centerVal = document.getElementById('gaugeCenterVal');
+        var centerLabel = document.getElementById('gaugeCenterLabel');
+        if (centerVal) centerVal.textContent = formatTokens(avgTokens);
+        if (centerLabel) centerLabel.textContent = '\u65E5\u5747\u7528\u91CF';
+        var lt1 = document.getElementById('gaugeLegendTokens');
+        var lt2 = document.getElementById('gaugeLegendCalls');
+        var lt3 = document.getElementById('gaugeLegendCost');
+        if (lt1) lt1.textContent = '\u65E5\u5747 ' + formatTokens(avgTokens);
+        if (lt2) lt2.textContent = '\u603B\u8BA1 ' + totalCount + '\u6B21';
+        if (lt3) lt3.textContent = '\u65E5\u5747 ' + formatCost(avgCost);
       }
       updateBudgetProgress();
+      startFlowCycle();
+    }
+
+    document.querySelectorAll('.usage-stat-item[data-stat]').forEach(function(item) {
+      item.addEventListener('mouseenter', function() {
+        flowPaused = true;
+        var key = item.dataset.stat;
+        var keys = ['today', 'week', 'month'];
+        flowCycleIndex = keys.indexOf(key);
+        setFlowActive(key);
+      });
+      item.addEventListener('mouseleave', function() {
+        flowPaused = false;
+      });
+      item.addEventListener('click', function() {
+        flowPaused = true;
+        var key = item.dataset.stat;
+        var keys = ['today', 'week', 'month'];
+        flowCycleIndex = keys.indexOf(key);
+        setFlowActive(key);
+        setTimeout(function() { flowPaused = false; }, 5000);
+      });
+    });
+
+    var flowPanel = document.getElementById('usageFlowPanel');
+    if (flowPanel) {
+      flowPanel.addEventListener('mouseenter', function() { flowPaused = true; });
+      flowPanel.addEventListener('mouseleave', function() { flowPaused = false; });
     }
 
     document.addEventListener('click', (e) => {
@@ -2926,6 +3224,9 @@ export class ConfigPanel {
           commitLanguage: els.commitLanguage.value,
           enableStreaming: els.enableStreaming.checked,
           proxy: els.proxy.value.trim(),
+          showStatusBarConfig: els.showStatusBarConfig.checked,
+          showStatusBarGroup: els.showStatusBarGroup.checked,
+          showStatusBarGenerate: els.showStatusBarGenerate.checked,
         },
       });
     });
@@ -3001,6 +3302,9 @@ export class ConfigPanel {
           els.commitLanguage.value = d.commitLanguage || 'English';
           els.enableStreaming.checked = d.enableStreaming !== false;
           els.proxy.value = d.proxy || '';
+          els.showStatusBarConfig.checked = d.showStatusBarConfig !== false;
+          els.showStatusBarGroup.checked = d.showStatusBarGroup !== false;
+          els.showStatusBarGenerate.checked = d.showStatusBarGenerate !== false;
           renderModelGroups(d.modelGroups, d.activeModelGroup);
           const isCNY = els.currency.value === 'CNY';
           els.exchangeRateField.style.display = isCNY ? 'flex' : 'none';

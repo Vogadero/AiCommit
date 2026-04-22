@@ -20,7 +20,6 @@ export class StatusBarManager {
     this.statusBarItem.text = '$(sparkle) AI Commit';
     this.statusBarItem.tooltip = 'AI Commit - 点击生成 commit 信息';
     this.statusBarItem.command = 'aicommit.generate';
-    this.statusBarItem.show();
 
     this.groupBarItem = vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Left,
@@ -35,9 +34,27 @@ export class StatusBarManager {
       vscode.StatusBarAlignment.Left,
       49,
     );
-    this.configBarItem.text = '$(gear)';
+    this.configBarItem.text = '$(gear)  AI Commit配置';
     this.configBarItem.tooltip = 'AI Commit - 打开配置面板';
     this.configBarItem.command = 'aicommit.openConfig';
+
+    this.applyVisibility();
+  }
+
+  applyVisibility(showConfig?: boolean, showGroup?: boolean, showGenerate?: boolean): void {
+    const cfg = vscode.workspace.getConfiguration('aicommit');
+    const sc = showConfig !== undefined ? showConfig : cfg.get<boolean>('showStatusBarConfig', true);
+    const sg = showGroup !== undefined ? showGroup : cfg.get<boolean>('showStatusBarGroup', true);
+    const sm = showGenerate !== undefined ? showGenerate : cfg.get<boolean>('showStatusBarGenerate', true);
+
+    if (sc) { this.configBarItem.show(); this.configBarShown = true; }
+    else { this.configBarItem.hide(); this.configBarShown = false; }
+
+    if (sm) { this.statusBarItem.show(); }
+    else { this.statusBarItem.hide(); }
+
+    if (sg && this.currentGroupName) { this.groupBarItem.show(); }
+    else { this.groupBarItem.hide(); }
   }
 
   updateGroupName(name: string): void {
