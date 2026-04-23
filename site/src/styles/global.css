@@ -127,6 +127,11 @@ a:hover { color: var(--primary); }
 }
 .icon-btn:hover { border-color: var(--primary); color: var(--primary-light); background: rgba(0,120,212,0.06); }
 
+.nav-hamburger {
+  display: none; background: none; border: none; color: var(--text);
+  font-size: 1.4rem; cursor: pointer; padding: 4px;
+}
+
 .nav-actions {
   display: flex; align-items: center; gap: 8px;
 }
@@ -430,6 +435,7 @@ section { padding: 88px 0; transition: background 0.4s ease; }
   margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;
   position: relative; overflow: hidden;
   transition: transform 0.3s;
+  background: color-mix(in srgb, var(--provider-bg, var(--primary)) 12%, transparent);
 }
 .provider-card:hover .provider-logo-wrap { transform: scale(1.08); }
 
@@ -670,8 +676,30 @@ section { padding: 88px 0; transition: background 0.4s ease; }
   .install-steps::before { display: none; }
 }
 
+@media (max-width: 768px) {
+  .hero h1 { font-size: 2.2rem; }
+  .hero p { font-size: 1rem; }
+  .hero-buttons { flex-direction: column; }
+  .features-grid { grid-template-columns: 1fr 1fr; }
+  .providers-grid { grid-template-columns: 1fr 1fr; }
+  .install-steps { grid-template-columns: 1fr; }
+  .install-steps::before { display: none; }
+  .nav-hamburger { display: block; }
+  .nav-links {
+    display: none; position: absolute; top: 56px; left: 0; right: 0;
+    background: var(--bg-card); border-bottom: 1px solid var(--border);
+    flex-direction: column; padding: 12px 20px; gap: 4px;
+    animation: slideDown 0.3s ease;
+  }
+  .nav-links.open { display: flex; }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+  .nav-links li { padding: 8px 0; }
+  .nav-links a { font-size: 1rem; }
+  .nav-actions { padding-top: 8px; border-top: 1px solid var(--border); margin-top: 4px; }
+}
+
 @media (max-width: 640px) {
-  .hero h1 { font-size: 2.4rem; }
+  .hero h1 { font-size: 2rem; }
   .hero-tagline { font-size: 1.1rem; }
   .hero-desc { font-size: 0.9rem; }
   .hero-buttons { flex-direction: column; align-items: center; }
@@ -679,8 +707,6 @@ section { padding: 88px 0; transition: background 0.4s ease; }
   .styles-grid { grid-template-columns: 1fr; }
   .screenshots-grid { grid-template-columns: 1fr; }
   .providers-grid { grid-template-columns: 1fr; }
-  .nav-links { gap: 14px; }
-  .nav-links a { font-size: 0.8rem; }
   section { padding: 56px 0; }
   .section-title { font-size: 1.6rem; }
   .footer-top { flex-direction: column; gap: 12px; text-align: center; }

@@ -198,12 +198,12 @@ const en = {
 }
 
 const providers = [
-  { name: 'OpenAI', nameEn: 'OpenAI', url: 'api.openai.com/v1', models: 'gpt-4o, o3-mini, gpt-4o-mini', bg: '#10b981', logo: 'openai' },
-  { name: 'DeepSeek', nameEn: 'DeepSeek', url: 'api.deepseek.com/v1', models: 'deepseek-chat (V3.2), deepseek-reasoner (R1)', bg: '#0078d4', logo: 'deepseek' },
-  { name: '通义千问', nameEn: 'Qwen', url: 'dashscope.aliyuncs.com', models: 'qwen3-max, qwen3-235b, qwen-turbo', bg: '#6c5ce7', logo: 'qwen' },
-  { name: 'Moonshot', nameEn: 'Moonshot', url: 'api.moonshot.cn/v1', models: 'kimi-k2, moonshot-v1-128k', bg: '#f59e0b', logo: 'moonshot' },
-  { name: '智谱 AI', nameEn: 'Zhipu AI', url: 'open.bigmodel.cn', models: 'glm-5, glm-4.7-flash', bg: '#ef4444', logo: 'chatglm' },
-  { name: 'Ollama', nameEn: 'Ollama', url: 'localhost:11434/v1', models: 'llama3, qwen3, deepseek-r1', bg: '#8b5cf6', logo: 'ollama' },
+  { name: 'OpenAI', nameEn: 'OpenAI', url: 'api.openai.com/v1', models: 'gpt-4o, o3-mini, gpt-4o-mini', bg: '#41299a', logo: 'openai' },
+  { name: 'DeepSeek', nameEn: 'DeepSeek', url: 'api.deepseek.com/v1', models: 'deepseek-chat (V3.2), deepseek-reasoner (R1)', bg: '#1a73e8', logo: 'deepseek' },
+  { name: '通义千问', nameEn: 'Qwen', url: 'dashscope.aliyuncs.com', models: 'qwen3-max, qwen3-235b, qwen-turbo', bg: '#615b10', logo: 'qwen' },
+  { name: 'Moonshot', nameEn: 'Moonshot', url: 'api.moonshot.cn/v1', models: 'kimi-k2, moonshot-v1-128k', bg: '#000000', logo: 'moonshot' },
+  { name: '智谱 AI', nameEn: 'Zhipu AI', url: 'open.bigmodel.cn', models: 'glm-5, glm-4.7-flash', bg: '#3b5cff', logo: 'chatglm' },
+  { name: 'Ollama', nameEn: 'Ollama', url: 'localhost:11434/v1', models: 'llama3, qwen3, deepseek-r1', bg: '#000000', logo: 'ollama' },
 ]
 
 function useInView(threshold = 0.12) {
@@ -363,6 +363,7 @@ function App() {
   const [faqOpen, setFaqOpen] = useState<number | null>(null)
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null)
   const [featureDetail, setFeatureDetail] = useState<{ title: string; content: string } | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
   const t = lang === 'zh' ? zh : en
   const details = lang === 'zh' ? featureDetailsZh : featureDetailsEn
 
@@ -378,12 +379,15 @@ function App() {
             <img src="/AiCommit/images/icon.png" alt="AI Commit" />
             <span>AI Commit</span>
           </a>
-          <ul className="nav-links">
-            <li><a href="#features">{t.nav.features}</a></li>
-            <li><a href="#install">{t.nav.install}</a></li>
-            <li><a href="#providers">{t.nav.providers}</a></li>
-            <li><a href="#screenshots">{t.nav.screenshots}</a></li>
-            <li><a href="#faq">{t.nav.faq}</a></li>
+          <button className="nav-hamburger" onClick={() => setMenuOpen(!menuOpen)}>
+            <i className={menuOpen ? 'ri-close-line' : 'ri-menu-line'} />
+          </button>
+          <ul className={`nav-links ${menuOpen ? 'open' : ''}`}>
+            <li><a href="#features" onClick={() => setMenuOpen(false)}>{t.nav.features}</a></li>
+            <li><a href="#install" onClick={() => setMenuOpen(false)}>{t.nav.install}</a></li>
+            <li><a href="#providers" onClick={() => setMenuOpen(false)}>{t.nav.providers}</a></li>
+            <li><a href="#screenshots" onClick={() => setMenuOpen(false)}>{t.nav.screenshots}</a></li>
+            <li><a href="#faq" onClick={() => setMenuOpen(false)}>{t.nav.faq}</a></li>
             <li className="nav-actions">
               <div className="nav-pill-group">
                 <button className={`nav-pill ${theme === 'light' ? 'active' : ''}`} onClick={() => setTheme('light')} title="Light mode">
@@ -490,7 +494,7 @@ function App() {
             {providers.map((p, i) => (
               <FadeIn key={i} delay={i * 50}>
                 <div className="provider-card">
-                  <div className="provider-logo-wrap" style={{ background: p.bg + '18' }}>
+                  <div className="provider-logo-wrap" style={{ '--provider-bg': p.bg } as React.CSSProperties}>
                     <img
                       src={`https://unpkg.com/@lobehub/icons-static-svg@latest/icons/${p.logo}.svg`}
                       alt={p.nameEn}
