@@ -25,8 +25,10 @@
 ### 🤖 AI 驱动生成
 - 基于代码 `git diff` 自动分析变更内容，生成规范的 commit 信息
 - 支持暂存区（`git diff --cached`）和工作区（`git diff`）两种 diff 来源
-- 一次生成多条候选方案，QuickPick 快速选择最合适的一条
+- 一次生成多条候选方案（1-5 条），QuickPick 快速选择最合适的一条
 - 大 diff 自动截断，提供"继续生成 / 仅分析部分文件 / 取消"三选项
+- 自动检测变更范围（scope），基于受影响模块智能推断
+- 项目上下文增强，附加项目名称和最近提交记录提升生成质量
 
 ### 🔌 OpenAI 兼容协议
 - 兼容所有 OpenAI API 协议的服务商，即配即用
@@ -38,7 +40,16 @@
 - **Conventional Commits** — `feat(auth): add login support`
 - **Gitmoji** — `✨ auth: add login support`
 - **Bullet** — `feat(auth): 添加登录功能: - 实现 JWT 认证; - 添加表单验证。`
-- **Custom** — 自定义 Prompt 模板，完全控制输出格式
+- **Custom** — 自定义格式模板，完全控制输出格式
+
+### 📝 7 种 Prompt 模板
+- **Bullet**（默认）— AI Commit 内置风格，标题末尾冒号，正文每行一个变更点
+- **Conventional Expert** — 标准 Conventional Commits 格式
+- **Concise** — 简洁风格，只生成标题行和简短正文
+- **Detailed** — 详细风格，包含动机、实现方式、风险评估
+- **Semantic** — 语义化风格，使用结构化 XML 格式分析变更
+- **Team** — 团队协作风格，支持破坏性变更标记和 Issue 关联
+- **Custom** — 自定义 Prompt 模板，支持占位符替换
 
 ### ⚡ 流式响应
 - SSE 流式输出，首字显示时间 < 1 秒
@@ -59,6 +70,7 @@
 - 日均用量、总调用次数、日均费用概览
 - 日预算 / 月预算告警（80% 警告、100% 超限）
 - 多币种支持（USD / CNY），可自定义汇率
+- 自定义模型单价，覆盖内置单价表
 - 用量数据导出为 JSON 或 CSV 格式
 
 ### 🔐 密钥安全
@@ -90,6 +102,7 @@
 - **重新生成** — 对上次结果不满意，一键重新生成
 - **多工作区支持** — 多根工作区下自动识别目标仓库
 - **AI 响应后处理管线** — 6 步清理管线，确保输出规范
+- **标题行长度限制** — 可配置标题行最大字符数（默认 72）
 
 ## 📦 安装
 
@@ -149,20 +162,39 @@ npx vsce package
 
 | 配置项 | 说明 | 默认值 |
 |--------|------|--------|
-| `aicommit.apiKey` | API 密钥（加密存储于 SecretStorage） | - |
+| `aicommit.enabled` | 启用或禁用 AI Commit 插件 | `true` |
+| `aicommit.baseUrl` | API 基础 URL（需兼容 OpenAI 协议） | `https://api.openai.com/v1` |
+| `aicommit.apiKey` | API 密钥（⚠️ 已弃用，请通过配置面板管理） | - |
 | `aicommit.model` | AI 模型名称 | `gpt-4` |
-| `aicommit.baseUrl` | API 基础 URL | `https://api.openai.com/v1` |
-| `aicommit.temperature` | 生成温度（0-2） | `0.7` |
+| `aicommit.temperature` | 生成温度（0-2），值越低越确定 | `0.7` |
 | `aicommit.maxTokens` | 最大生成 Tokens | `500` |
 
 ### 提交配置
 
 | 配置项 | 说明 | 默认值 |
 |--------|------|--------|
-| `aicommit.commitStyle` | 提交风格：`conventional` / `gitmoji` / `bullet` / `custom` | `conventional` |
-| `aicommit.commitLanguage` | 提交语言：`en` / `zh` / `follow-vscode` | `en` |
-| `aicommit.customPrompt` | 自定义 Prompt 模板（commitStyle 为 custom 时生效） | - |
+| `aicommit.format` | 提交风格：`conventional` / `gitmoji` / `bullet` / `custom` | `bullet` |
+| `aicommit.customFormatTemplate` | 自定义格式模板（format 为 custom 时生效） | `<type>(<scope>): <description>` |
+| `aicommit.commitLanguage` | 提交语言：`English` / `Chinese` / `Follow VSCode` | `English` |
 | `aicommit.diffSource` | Diff 来源：`staged` / `unstaged` | `staged` |
+| `aicommit.maxLength` | 标题行最大字符数 | `72` |
+| `aicommit.candidateCount` | 候选方案数量（1-5） | `2` |
+| `aicommit.autoDetectScope` | 自动检测变更范围（scope） | `true` |
+| `aicommit.diffTruncateThreshold` | Diff 截断阈值（行数） | `3000` |
+
+### Prompt 模板
+
+| 配置项 | 说明 | 默认值 |
+|--------|------|--------|
+| `aicommit.promptTemplate` | Prompt 模板：`bullet` / `conventional-expert` / `concise` / `detailed` / `semantic` / `team` / `custom` | `bullet` |
+| `aicommit.customPromptTemplate` | 自定义 Prompt 模板内容（promptTemplate 为 custom 时生效） | - |
+
+### 模型配置组
+
+| 配置项 | 说明 | 默认值 |
+|--------|------|--------|
+| `aicommit.modelGroups` | 模型配置组列表 | `[]` |
+| `aicommit.activeModelGroup` | 当前活跃配置组名称 | - |
 
 ### 网络配置
 
@@ -170,6 +202,16 @@ npx vsce package
 |--------|------|--------|
 | `aicommit.enableStreaming` | 启用 SSE 流式响应 | `true` |
 | `aicommit.proxy` | 代理地址（HTTP/HTTPS/SOCKS5） | - |
+
+### 用量与预算
+
+| 配置项 | 说明 | 默认值 |
+|--------|------|--------|
+| `aicommit.dailyBudget` | 日预算（0 为不限制） | `0` |
+| `aicommit.monthlyBudget` | 月预算（0 为不限制） | `0` |
+| `aicommit.currency` | 货币单位：`USD` / `CNY` | `USD` |
+| `aicommit.exchangeRate` | 自定义汇率（1 USD = ? CNY） | `7.2` |
+| `aicommit.customModelPricing` | 自定义模型单价（覆盖内置单价表） | `{}` |
 
 ### 状态栏配置
 
@@ -179,21 +221,13 @@ npx vsce package
 | `aicommit.showStatusBarGroup` | 显示当前配置组名称 | `true` |
 | `aicommit.showStatusBarGenerate` | 显示生成入口（sparkle 图标） | `true` |
 
-### 模型配置组
+### 其他配置
 
 | 配置项 | 说明 | 默认值 |
 |--------|------|--------|
-| `aicommit.modelGroups` | 模型配置组列表 | `[]` |
-| `aicommit.activeModelGroup` | 当前活跃配置组名称 | - |
-
-### 用量与预算
-
-| 配置项 | 说明 | 默认值 |
-|--------|------|--------|
-| `aicommit.dailyBudget` | 日预算（0 为不限制） | `0` |
-| `aicommit.monthlyBudget` | 月预算（0 为不限制） | `0` |
-| `aicommit.currency` | 货币单位：`USD` / `CNY` | `USD` |
-| `aicommit.exchangeRate` | 自定义汇率（1 USD = ? CNY） | `7.25` |
+| `aicommit.saveHistory` | 保存 AI 生成历史记录 | `false` |
+| `aicommit.logLevel` | 日志级别：`error` / `warn` / `info` / `debug` | `info` |
+| `aicommit.enableProjectContext` | 启用项目上下文增强 | `false` |
 
 ## 🎨 提交风格详解
 
@@ -248,11 +282,11 @@ feat(auth): 添加用户登录功能:
 | `AI Commit: 选择 AI 模型` | 从 API 获取可用模型列表 |
 | `AI Commit: 打开配置面板` | 打开可视化配置面板 |
 | `AI Commit: 切换模型配置组` | QuickPick 切换配置组 |
-| `AI Commit: 查看历史` | 查看生成历史记录 |
-| `AI Commit: 清空历史` | 清空所有历史记录 |
+| `AI Commit: 使用历史记录` | 查看并复用生成历史 |
+| `AI Commit: 清空生成历史` | 清空所有历史记录 |
 | `AI Commit: 导出用量数据` | 导出 Token 用量统计 |
 | `AI Commit: 导出诊断日志` | 导出诊断信息用于问题排查 |
-| `AI Commit: Amend 提交` | 对上次提交进行 amend 修改 |
+| `AI Commit: 修改上次提交信息` | 对上次提交进行 amend 修改 |
 
 ## 🛠️ 开发
 

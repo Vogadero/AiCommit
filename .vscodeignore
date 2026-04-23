@@ -13,3 +13,7 @@ esbuild.js
 *.vsix
 需求文档.md
 .trae/**
+site/**
+LICENSE
+README.en.md
+scripts/**

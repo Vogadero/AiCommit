@@ -25,8 +25,10 @@
 ### 🤖 AI-Powered Generation
 - Automatically analyze code changes from `git diff` to generate conventional commit messages
 - Support both staged (`git diff --cached`) and unstaged (`git diff`) diff sources
-- Generate multiple candidates at once, pick your favorite via QuickPick
+- Generate multiple candidates (1-5) at once, pick your favorite via QuickPick
 - Auto-truncate large diffs with "Continue / Partial analysis / Cancel" options
+- Auto-detect change scope based on affected modules
+- Project context enhancement with project name and recent commit history
 
 ### 🔌 OpenAI Compatible
 - Works with any OpenAI API-compatible provider — configure and go
@@ -38,7 +40,16 @@
 - **Conventional Commits** — `feat(auth): add login support`
 - **Gitmoji** — `✨ auth: add login support`
 - **Bullet** — `feat(auth): add login: - Implement JWT auth; - Add form validation.`
-- **Custom** — Custom Prompt template for full control over output format
+- **Custom** — Custom format template for full control over output format
+
+### 📝 7 Prompt Templates
+- **Bullet** (default) — AI Commit built-in style, colon at title end, bullet-point body
+- **Conventional Expert** — Standard Conventional Commits format
+- **Concise** — Minimal style, title line and short body only
+- **Detailed** — Verbose style with motivation, implementation, and risk assessment
+- **Semantic** — Structured XML format for change analysis
+- **Team** — Team collaboration style with breaking change markers and Issue linking
+- **Custom** — Custom Prompt template with placeholder substitution
 
 ### ⚡ Streaming Response
 - SSE streaming output, first token in < 1 second
@@ -59,6 +70,7 @@
 - Daily average usage, total call count, and daily average cost overview
 - Daily / Monthly budget alerts (80% warning, 100% exceeded)
 - Multi-currency support (USD / CNY) with customizable exchange rate
+- Custom model pricing to override built-in price table
 - Export usage data as JSON or CSV
 
 ### 🔐 Secure Key Storage
@@ -90,6 +102,7 @@
 - **Regenerate** — Not satisfied? One-click regenerate
 - **Multi-Workspace** — Auto-detect target repository in multi-root workspaces
 - **AI Response Pipeline** — 6-step cleanup pipeline ensuring clean output
+- **Title Length Limit** — Configurable max title line length (default 72)
 
 ## 📦 Installation
 
@@ -149,20 +162,39 @@ Select a commit style in the configuration panel, or write a custom Prompt templ
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| `aicommit.apiKey` | API Key (encrypted in SecretStorage) | - |
+| `aicommit.enabled` | Enable or disable AI Commit extension | `true` |
+| `aicommit.baseUrl` | API base URL (OpenAI-compatible) | `https://api.openai.com/v1` |
+| `aicommit.apiKey` | API Key (⚠️ deprecated, use config panel) | - |
 | `aicommit.model` | AI model name | `gpt-4` |
-| `aicommit.baseUrl` | API base URL | `https://api.openai.com/v1` |
-| `aicommit.temperature` | Generation temperature (0-2) | `0.7` |
+| `aicommit.temperature` | Generation temperature (0-2), lower = more deterministic | `0.7` |
 | `aicommit.maxTokens` | Max generation tokens | `500` |
 
 ### Commit Settings
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| `aicommit.commitStyle` | Commit style: `conventional` / `gitmoji` / `bullet` / `custom` | `conventional` |
-| `aicommit.commitLanguage` | Commit language: `en` / `zh` / `follow-vscode` | `en` |
-| `aicommit.customPrompt` | Custom Prompt template (when commitStyle is custom) | - |
+| `aicommit.format` | Commit style: `conventional` / `gitmoji` / `bullet` / `custom` | `bullet` |
+| `aicommit.customFormatTemplate` | Custom format template (when format is custom) | `<type>(<scope>): <description>` |
+| `aicommit.commitLanguage` | Commit language: `English` / `Chinese` / `Follow VSCode` | `English` |
 | `aicommit.diffSource` | Diff source: `staged` / `unstaged` | `staged` |
+| `aicommit.maxLength` | Max title line character count | `72` |
+| `aicommit.candidateCount` | Number of candidates (1-5) | `2` |
+| `aicommit.autoDetectScope` | Auto-detect change scope | `true` |
+| `aicommit.diffTruncateThreshold` | Diff truncation threshold (lines) | `3000` |
+
+### Prompt Templates
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `aicommit.promptTemplate` | Prompt template: `bullet` / `conventional-expert` / `concise` / `detailed` / `semantic` / `team` / `custom` | `bullet` |
+| `aicommit.customPromptTemplate` | Custom prompt template content (when promptTemplate is custom) | - |
+
+### Model Groups
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `aicommit.modelGroups` | Model configuration groups | `[]` |
+| `aicommit.activeModelGroup` | Active configuration group name | - |
 
 ### Network Settings
 
@@ -170,6 +202,16 @@ Select a commit style in the configuration panel, or write a custom Prompt templ
 |---------|-------------|---------|
 | `aicommit.enableStreaming` | Enable SSE streaming response | `true` |
 | `aicommit.proxy` | Proxy address (HTTP/HTTPS/SOCKS5) | - |
+
+### Usage & Budget
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `aicommit.dailyBudget` | Daily budget (0 = unlimited) | `0` |
+| `aicommit.monthlyBudget` | Monthly budget (0 = unlimited) | `0` |
+| `aicommit.currency` | Currency: `USD` / `CNY` | `USD` |
+| `aicommit.exchangeRate` | Custom exchange rate (1 USD = ? CNY) | `7.2` |
+| `aicommit.customModelPricing` | Custom model pricing (overrides built-in) | `{}` |
 
 ### Status Bar Settings
 
@@ -179,21 +221,13 @@ Select a commit style in the configuration panel, or write a custom Prompt templ
 | `aicommit.showStatusBarGroup` | Show current model group name | `true` |
 | `aicommit.showStatusBarGenerate` | Show generate entry (sparkle icon) | `true` |
 
-### Model Groups
+### Other Settings
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| `aicommit.modelGroups` | Model configuration groups | `[]` |
-| `aicommit.activeModelGroup` | Active configuration group name | - |
-
-### Usage & Budget
-
-| Setting | Description | Default |
-|---------|-------------|---------|
-| `aicommit.dailyBudget` | Daily budget (0 = unlimited) | `0` |
-| `aicommit.monthlyBudget` | Monthly budget (0 = unlimited) | `0` |
-| `aicommit.currency` | Currency: `USD` / `CNY` | `USD` |
-| `aicommit.exchangeRate` | Custom exchange rate (1 USD = ? CNY) | `7.25` |
+| `aicommit.saveHistory` | Save AI generation history | `false` |
+| `aicommit.logLevel` | Log level: `error` / `warn` / `info` / `debug` | `info` |
+| `aicommit.enableProjectContext` | Enable project context enhancement | `false` |
 
 ## 🎨 Commit Style Details
 
@@ -248,7 +282,7 @@ Use custom Prompt templates for full control over output format and content. Sup
 | `AI Commit: Select AI Model` | Fetch available models from API |
 | `AI Commit: Open Configuration Panel` | Open visual config panel |
 | `AI Commit: Switch Model Group` | QuickPick group switching |
-| `AI Commit: View History` | View generation history |
+| `AI Commit: Use History` | View and reuse generation history |
 | `AI Commit: Clear History` | Clear all history |
 | `AI Commit: Export Usage Data` | Export token usage statistics |
 | `AI Commit: Export Diagnostic Log` | Export diagnostic info for troubleshooting |
