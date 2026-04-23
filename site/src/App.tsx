@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './styles/global.css'
 
 const featureDetailsZh: Record<string, { title: string; content: string }> = {
@@ -198,30 +198,12 @@ const en = {
 }
 
 const providers = [
-  {
-    name: 'OpenAI', nameEn: 'OpenAI', url: 'api.openai.com/v1', models: 'gpt-4, gpt-4o', bg: '#10b981',
-    svg: <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/></svg>,
-  },
-  {
-    name: 'DeepSeek', nameEn: 'DeepSeek', url: 'api.deepseek.com/v1', models: 'deepseek-chat', bg: '#0078d4',
-    svg: <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>,
-  },
-  {
-    name: '通义千问', nameEn: 'Qwen', url: 'dashscope.aliyuncs.com', models: 'qwen-turbo, qwen-plus', bg: '#6c5ce7',
-    svg: <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>,
-  },
-  {
-    name: 'Moonshot', nameEn: 'Moonshot', url: 'api.moonshot.cn/v1', models: 'moonshot-v1-8k', bg: '#f59e0b',
-    svg: <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 3a9 9 0 0 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-1 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>,
-  },
-  {
-    name: '智谱 AI', nameEn: 'GLM', url: 'open.bigmodel.cn', models: 'glm-4, glm-4-flash', bg: '#ef4444',
-    svg: <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>,
-  },
-  {
-    name: 'Ollama', nameEn: 'Ollama', url: 'localhost:11434/v1', models: 'llama3, qwen2', bg: '#8b5cf6',
-    svg: <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 2a2 2 0 0 0-2 2c0 .74.4 1.39 1 1.73V7h-1a5 5 0 0 0-5 5v1H3v2h2v3a2 2 0 0 0 2 2h1v2h2v-2h4v2h2v-2h1a2 2 0 0 0 2-2v-3h2v-2h-2v-1a5 5 0 0 0-5-5h-1V5.73c.6-.34 1-.99 1-1.73a2 2 0 0 0-2-2zM9.5 14a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>,
-  },
+  { name: 'OpenAI', nameEn: 'OpenAI', url: 'api.openai.com/v1', models: 'gpt-4o, o3-mini, gpt-4o-mini', bg: '#10b981', logo: 'openai' },
+  { name: 'DeepSeek', nameEn: 'DeepSeek', url: 'api.deepseek.com/v1', models: 'deepseek-chat (V3.2), deepseek-reasoner (R1)', bg: '#0078d4', logo: 'deepseek' },
+  { name: '通义千问', nameEn: 'Qwen', url: 'dashscope.aliyuncs.com', models: 'qwen3-max, qwen3-235b, qwen-turbo', bg: '#6c5ce7', logo: 'qwen' },
+  { name: 'Moonshot', nameEn: 'Moonshot', url: 'api.moonshot.cn/v1', models: 'kimi-k2, moonshot-v1-128k', bg: '#f59e0b', logo: 'moonshot' },
+  { name: '智谱 AI', nameEn: 'Zhipu AI', url: 'open.bigmodel.cn', models: 'glm-5, glm-4.7-flash', bg: '#ef4444', logo: 'chatglm' },
+  { name: 'Ollama', nameEn: 'Ollama', url: 'localhost:11434/v1', models: 'llama3, qwen3, deepseek-r1', bg: '#8b5cf6', logo: 'ollama' },
 ]
 
 function useInView(threshold = 0.12) {
@@ -247,6 +229,27 @@ function FadeIn({ children, className = '', delay = 0 }: { children: React.React
       {children}
     </div>
   )
+}
+
+function TypingText({ text, speed = 40 }: { text: string; speed?: number }) {
+  const [displayed, setDisplayed] = useState('')
+  const [done, setDone] = useState(false)
+  useEffect(() => {
+    setDisplayed('')
+    setDone(false)
+    let i = 0
+    const timer = setInterval(() => {
+      if (i < text.length) {
+        setDisplayed(text.slice(0, i + 1))
+        i++
+      } else {
+        clearInterval(timer)
+        setDone(true)
+      }
+    }, speed)
+    return () => clearInterval(timer)
+  }, [text, speed])
+  return <span>{displayed}<span className={`typing-cursor ${done ? 'blink' : ''}`}>|</span></span>
 }
 
 function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
@@ -367,8 +370,6 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
 
-  const toggleTheme = useCallback(() => setTheme(prev => prev === 'dark' ? 'light' : 'dark'), [])
-
   return (
     <>
       <nav className="nav">
@@ -384,11 +385,17 @@ function App() {
             <li><a href="#screenshots">{t.nav.screenshots}</a></li>
             <li><a href="#faq">{t.nav.faq}</a></li>
             <li className="nav-actions">
-              <button className="nav-toggle-btn" onClick={toggleTheme} title={theme === 'dark' ? (lang === 'zh' ? '切换亮色' : 'Light mode') : (lang === 'zh' ? '切换暗色' : 'Dark mode')}>
-                <i className={theme === 'dark' ? 'ri-sun-line' : 'ri-moon-line'} />
-              </button>
-              <button className="nav-toggle-btn" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
-                {lang === 'zh' ? 'EN' : '中文'}
+              <div className="nav-pill-group">
+                <button className={`nav-pill ${theme === 'light' ? 'active' : ''}`} onClick={() => setTheme('light')} title="Light mode">
+                  <i className="ri-sun-line" />
+                </button>
+                <button className={`nav-pill ${theme === 'dark' ? 'active' : ''}`} onClick={() => setTheme('dark')} title="Dark mode">
+                  <i className="ri-moon-line" />
+                </button>
+              </div>
+              <button className="nav-lang-btn" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
+                <i className="ri-translate-2" />
+                <span>{lang === 'zh' ? 'EN' : '中文'}</span>
               </button>
             </li>
           </ul>
@@ -404,7 +411,7 @@ function App() {
           <img src="/AiCommit/images/icon.png" alt="AI Commit" className="hero-logo" />
           <div className="hero-badge"><i className="ri-star-line" /> {t.hero.star}</div>
           <h1>AI Commit</h1>
-          <p className="hero-tagline">{t.hero.tagline}</p>
+          <p className="hero-tagline"><TypingText text={t.hero.tagline} speed={50} /></p>
           <p className="hero-desc">{t.hero.desc}</p>
           <div className="hero-buttons">
             <a href="https://github.com/Vogadero/AiCommit/releases/latest" className="btn-primary" target="_blank" rel="noopener noreferrer">
@@ -484,7 +491,13 @@ function App() {
               <FadeIn key={i} delay={i * 50}>
                 <div className="provider-card">
                   <div className="provider-logo-wrap" style={{ background: p.bg + '18' }}>
-                    <div className="provider-svg" style={{ color: p.bg }}>{p.svg}</div>
+                    <img
+                      src={`https://unpkg.com/@lobehub/icons-static-svg@latest/icons/${p.logo}.svg`}
+                      alt={p.nameEn}
+                      className="provider-logo-img"
+                      onError={(e) => { const img = e.target as HTMLImageElement; img.style.display = 'none'; const s = img.nextElementSibling; if (s) (s as HTMLElement).style.display = 'flex'; }}
+                    />
+                    <span className="provider-logo-letter" style={{ display: 'none' }}>{p.nameEn.charAt(0)}</span>
                   </div>
                   <h4>{lang === 'zh' ? p.name : p.nameEn}</h4>
                   <code>{p.url}</code>
