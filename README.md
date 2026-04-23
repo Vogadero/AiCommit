@@ -20,6 +20,8 @@
 
 ---
 
+![](images/screenshot-config.png)
+
 ## ✨ 功能特性
 
 ### 🤖 AI 驱动生成

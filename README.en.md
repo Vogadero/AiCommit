@@ -20,6 +20,8 @@
 
 ---
 
+![](images/screenshot-config.png)
+
 ## ✨ Features
 
 ### 🤖 AI-Powered Generation
